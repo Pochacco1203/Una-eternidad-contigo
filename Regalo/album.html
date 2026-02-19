@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Eternidad a tu lado 🤍</title>
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Playfair+Display:ital@0;1&family=Inter:wght@300;400&display=swap" rel="stylesheet">
+
+<style>
+/* --- SISTEMA DE DISEÑO --- */
+:root {
+    --accent: #ffb7c5;
+    --glass: rgba(255, 255, 255, 0.05);
+    --border: rgba(255, 255, 255, 0.12);
+    --gold: #ffd700;
+}
+
+*{margin:0;padding:0;box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+body{
+    background: #020205;
+    overflow-x:hidden;
+    color: white;
+    font-family: 'Inter', sans-serif;
+}
+
+#galaxyCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-10}
+
+.sparkle {
+    position: fixed; width: 4px; height: 4px; background: white; border-radius: 50%;
+    pointer-events: none; z-index: 9999; animation: sparkleLife 0.8s ease-out forwards;
+    box-shadow: 0 0 10px var(--accent);
+}
+@keyframes sparkleLife { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(0) translateY(20px); opacity: 0; } }
+
+.header-container { padding: 60px 20px 20px; text-align: center; }
+.header-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.5rem, 8vw, 4.5rem);
+    font-style: italic;
+    background: linear-gradient(to bottom, #fff, #aaa);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    animation: titleFloat 3s ease-in-out infinite alternate;
+}
+@keyframes titleFloat { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+
+/* --- GALERÍA MEJORADA --- */
+.gallery-section {
+    position: relative; max-width: 500px; height: 500px; margin: 40px auto;
+    display: flex; flex-direction: column; align-items: center; perspective: 1500px;
+}
+.stack-container { position: relative; width: 100%; height: 400px; display: flex; justify-content: center; align-items: center; }
+.photo-card {
+    position: absolute; width: 320px; height: 400px; padding: 12px;
+    background: var(--glass); backdrop-filter: blur(25px); border: 1px solid var(--border);
+    border-radius: 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+    transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+    overflow: hidden; pointer-events: none;
+}
+.photo-card img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; }
+.photo-card.active { pointer-events: auto; }
+
+.photo-card.exit-next { transform: translateX(200%) rotate(45deg) scale(0.5) !important; opacity: 0; }
+.photo-card.exit-prev { transform: translateX(-200%) rotate(-45deg) scale(0.5) !important; opacity: 0; }
+
+.nav-controls { display: flex; gap: 40px; margin-top: 35px; z-index: 20; }
+.nav-btn {
+    width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.08);
+    border: 1px solid var(--border); color: white; font-size: 28px; cursor: pointer; transition: 0.4s;
+    display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);
+}
+.nav-btn:hover { background: var(--accent); color: black; transform: scale(1.1); box-shadow: 0 0 25px var(--accent); }
+
+/* --- CAMINO ESTELAR --- */
+.star-path-container {
+    position: relative; width: 100%; max-width: 600px; margin: 100px auto;
+    padding-bottom: 50px; display: flex; flex-direction: column; align-items: center;
+}
+.star-node {
+    width: 45px; height: 45px; background: rgba(255,255,255,0.05); border-radius: 50%;
+    margin: 60px 0; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: 0.6s; position: relative; z-index: 5; border: 1px solid rgba(255,255,255,0.1);
+}
+.star-node.active { background: var(--gold); box-shadow: 0 0 30px var(--gold); transform: scale(1.2); }
+.star-node::before { content: "⭐"; font-size: 1.2rem; opacity: 0.3; transition: 0.5s; }
+.star-node.active::before { opacity: 1; transform: scale(1.1); }
+
+.final-message {
+    max-width: 85% !important; margin: 50px auto 150px; text-align: center;
+    font-family: 'Dancing Script', cursive; font-size: 1.9rem; line-height: 1.6;
+    color: #f0f0f0; text-shadow: 0 0 20px rgba(255,255,255,0.4);
+    padding: 20px;
+}
+
+/* --- MODALS --- */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.92); backdrop-filter: blur(15px); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
+.modal-content { background: rgba(255,255,255,0.05); border: 1px solid var(--border); padding: 30px; border-radius: 30px; width: 100%; max-width: 500px; position: relative; text-align: center; }
+
+.modal-img { width: 100%; height: 250px; object-fit: cover; border-radius: 15px; margin-bottom: 20px; border: 1px solid var(--border); }
+
+/* --- BARRA LATERAL --- */
+.sidebar { position: fixed; right: 30px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 20px; z-index: 100; }
+.circle-btn { width: 56px; height: 56px; border-radius: 50%; background: var(--glass); border: 1px solid var(--border); color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(15px); transition: 0.4s; }
+.circle-btn:hover { background: var(--accent); color: black; }
+
+.trunk-section { margin: 80px auto; text-align: center; }
+.trunk-container { cursor: pointer; font-size: 90px; transition: 0.4s; display: inline-block; }
+.envelopes-wrapper { display: flex; justify-content: center; gap: 15px; margin-top: 30px; min-height: 50px; }
+.mini-envelope { width: 50px; height: 40px; background: #fffafa; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; opacity: 0; transform: translateY(20px); transition: 0.6s; }
+.mini-envelope.show { opacity: 1; transform: translateY(0); }
+
+.clock-container { margin: 40px auto; padding: 25px; background: var(--glass); border-radius: 25px; border: 1px solid var(--border); text-align: center; max-width: 450px; }
+#clock { font-size: 1.3rem; color: var(--accent); margin-top: 10px; }
+
+/* AJUSTES ESPECÍFICOS PARA CELULAR */
+@media (max-width: 600px) {
+    .photo-card { width: 280px; height: 350px; }
+    .gallery-section { height: 450px; }
+    .stack-container { height: 350px; }
+    .sidebar { 
+        right: 10px; 
+        top: auto; 
+        bottom: 20px; 
+        transform: none; 
+        flex-direction: row; 
+        width: 100%; 
+        justify-content: center; 
+        background: rgba(0,0,0,0.5);
+        padding: 10px;
+        backdrop-filter: blur(10px);
+    }
+    .circle-btn { width: 45px; height: 45px; }
+    #heart-egg { left: 20px !important; bottom: 85px !important; width: 55px !important; height: 55px !important; }
+    .star-node { margin: 40px 0; }
+    .star-path-container h2 { font-size: 2rem !important; }
+    .final-message { font-size: 1.4rem; margin-bottom: 100px; }
+    .modal-content { padding: 20px; border-radius: 20px; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="galaxyCanvas"></canvas>
+<div id="heart-egg" style="position:fixed; bottom:40px; left:40px; width:65px; height:65px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:28px; cursor:pointer; z-index:99;" onclick="triggerMagic()">💝</div>
+
+<header class="header-container">
+    <h1 class="header-title">Eternidad a tu lado</h1>
+</header>
+
+<main>
+    <section class="gallery-section">
+        <div class="stack-container" id="stack"></div>
+        <div class="nav-controls">
+            <button class="nav-btn" onclick="prevPhoto()">‹</button>
+            <button class="nav-btn" onclick="nextPhoto()">›</button>
+        </div>
+        <div id="progressBars" style="display:flex; gap:8px; margin-top:20px;"></div>
+        <div style="margin-top: 20px;">
+            <button onclick="document.getElementById('inputFotos').click()" style="background:transparent; color:white; border:1px solid var(--border); padding:8px 18px; border-radius:20px; cursor:pointer;">+ Añadir Recuerdo</button>
+            <input type="file" id="inputFotos" multiple hidden accept="image/*">
+        </div>
+    </section>
+
+    <div class="clock-container">
+        <div>Nuestra historia comenzó hace:</div>
+        <div id="clock">Cargando...</div>
+    </div>
+
+    <section class="trunk-section">
+        <div class="trunk-container" id="trunkIcon" onclick="openTrunk()">🧰</div>
+        <div class="envelopes-wrapper" id="envelopesBox">
+            <div class="mini-envelope" onclick="openMiniLetter(0)">✉️</div>
+            <div class="mini-envelope" onclick="openMiniLetter(1)">✉️</div>
+            <div class="mini-envelope" onclick="openMiniLetter(2)">✉️</div>
+            <div class="mini-envelope" onclick="openMiniLetter(3)">✉️</div>
+            <div class="mini-envelope" onclick="openMiniLetter(4)">✉️</div>
+        </div>
+    </section>
+
+    <div class="star-path-container" id="starPath">
+        <h2 style="font-family:'Dancing Script'; font-size: 2.8rem; margin-bottom: 40px; color: var(--accent);">Nuestro Camino Estelar</h2>
+    </div>
+
+    <div class="final-message">
+        <i>"Aun nos falta camino por recorrer, que brillara igual o mas intensa que las estrellas mismas, quiero seguir a tu lado y recorrer el camino juntos, te amo mucho, no lo olvides. Gracias por todo este tiempo que llevamos juntos, deseo fervientemente y en Dios confío en que nuestra relacion sera duradera y pacifica. Gracias por un año tan lindo a tu lado, deseo que todo siga bien pero siempre a tu lado en las buenas y en las malas.  TE AMO."</i><br>🤍
+    </div>
+</main>
+
+<div class="modal" id="modalAuth">
+    <div class="modal-content">
+        <h2 style="margin-bottom:20px;">Acceso Privado</h2>
+        <input type="password" id="passInput" placeholder="Fecha: DD/MM/AAAA" style="width:100%; padding:15px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:15px; color:white; margin-bottom:20px;">
+        <button onclick="checkPass()" style="width:100%; padding:15px; background:white; color:black; border-radius:15px; font-weight:bold; cursor:pointer;">Entrar</button>
+        <button onclick="closeModals()" style="margin-top:15px; border:none; background:none; color:gray; cursor:pointer;">Volver</button>
+    </div>
+</div>
+
+<div class="modal" id="modalStar">
+    <div class="modal-content">
+        <img id="starImg" src="" class="modal-img">
+        <p id="starText" style="font-family:'Dancing Script'; font-size:1.5rem;"></p>
+        <button onclick="closeModals()" style="margin-top:20px; padding:10px 20px; background:var(--accent); border:none; border-radius:10px; cursor:pointer;">Cerrar</button>
+    </div>
+</div>
+
+<div class="modal" id="modalLetter">
+    <div class="modal-content" style="text-align:left;">
+        <div id="letterText" style="font-family:'Playfair Display'; font-size:1.1rem; line-height:1.6; max-height:60vh; overflow-y:auto;"></div>
+        <button onclick="closeModals()" style="margin-top:20px; width:100%; padding:12px; background:var(--accent); border:none; border-radius:10px;">Cerrar</button>
+    </div>
+</div>
+
+<div class="modal" id="modalGeneric">
+    <div class="modal-content">
+        <h3 id="genericTitle" style="color:var(--accent); margin-bottom:15px;"></h3>
+        <p id="genericBody"></p>
+        <button onclick="closeModals()" style="margin-top:20px; padding:10px 20px; background:white; color:black; border:none; border-radius:10px;">Cerrar</button>
+    </div>
+</div>
+
+<nav class="sidebar">
+    <div class="circle-btn" onclick="openPanel('lugares')">📍</div>
+    <div class="circle-btn" onclick="openPanel('metas')">✨</div>
+    <div class="circle-btn" onclick="openLetterAuth()">✉️</div>
+    <div class="circle-btn" onclick="toggleMusic()">🎵</div>
+</nav>
+
+<audio id="bgMusic" loop><source src="musica.mp3" type="audio/mpeg"></audio>
+
+<script>
+/* --- DATA --- */
+const starData = [
+    { img: "estrella1.jpg", txt: "Con esta foto te conocí, fue el inicio de todo, y no me arrepiento de nada." },
+    { img: "estrella2.jpg", txt: "Ver esta foto me recuerda a que eres y seras mi niña preciosa, a quien debo amar y cuidar con mi vida." },
+    { img: "estrella3.jpg", txt: "Esa sonrisa siempre me hace sentir feliz, eres ese motor que me mueve dia a dia." },
+    { img: "estrella4.jpg", txt: "Ver tus ojos y el brillo de estos es el mejor regalo que la vida me pudo dar." },
+    { img: "estrella5.jpg", txt: "Y como olvidar que gracias a tus encantos y tu inmensa belleza me pusiste a tus pies." },
+    { img: "estrella6.jpg", txt: "Verte con mi ropa me genera esa sensacion de ser tu lugar seguro (Aparte, me da risa y ternura)." },
+    { img: "estrella7.jpg", txt: "Oh, Dios... Tu cara, tan tersa y bella, me pierdo en tu hermosura cada dia mas." }
+];
+
+const trunkData = [
+    { img: "baul1.jpg", txt: "Me gusta ver esta foto, me da ternura." },
+    { img: "baul2.jpg",txt: "Tu sonrisa, me encanta ver tu sonrisa hermosa, es mi adicción." },
+    { img: "baul3.jpg",txt: "Desde pequeña, tienes esos ojos hermosos que me encantan." },
+    { img: "baul4.jpg",txt: "Imposible no morir de ternura cuando te veo :3" },
+    { img: "baul5.jpg", txt: "Y esta foto, siempre que la veo en mi fondo de pantalla, me muero de ternura, te ves tan linda." }
+];
+
+/* --- LÓGICA (Sin cambios) --- */
+let fotos=["foto1.jpg","foto2.jpg","foto3.jpg","foto4.jpg","foto5.jpg","foto6.jpg"];
+let currentIndex=0;
+
+function renderStack() {
+    const container = document.getElementById('stack');
+    container.innerHTML = "";
+    fotos.forEach((foto, i) => {
+        const imgIndex = (currentIndex + i) % fotos.length;
+        const card = document.createElement('div');
+        card.className = 'photo-card' + (i === 0 ? ' active' : '');
+        card.style.zIndex = fotos.length - i;
+        card.style.transform = `translateY(${i * -25}px) scale(${1 - (i * 0.08)}) rotate(${i === 0 ? 0 : (i % 2 === 0 ? 5 : -5) * i}deg)`;
+        card.style.filter = `blur(${i === 0 ? 0 : i * 2}px)`;
+        card.style.opacity = i > 3 ? 0 : 1 - (i * 0.2);
+        card.innerHTML = `<img src="${fotos[imgIndex]}" onerror="this.src='https://via.placeholder.com/320x400?text=Imagen+No+Encontrada'">`;
+        container.appendChild(card);
+    });
+    updateIndicators();
+}
+
+function nextPhoto() {
+    const cards = document.querySelectorAll('.photo-card');
+    if(cards[0]) {
+        cards[0].classList.add('exit-next');
+        setTimeout(() => { currentIndex = (currentIndex + 1) % fotos.length; renderStack(); }, 500);
+    }
+}
+
+function prevPhoto() {
+    const cards = document.querySelectorAll('.photo-card');
+    if(cards[0]) {
+        cards[0].classList.add('exit-prev');
+        setTimeout(() => { currentIndex = (currentIndex - 1 + fotos.length) % fotos.length; renderStack(); }, 500);
+    }
+}
+
+function updateIndicators() {
+    const pb = document.getElementById("progressBars");
+    pb.innerHTML = "";
+    fotos.forEach((_, i) => {
+        const dot = document.createElement("div");
+        dot.style = `width:${i===currentIndex?'30px':'15px'}; height:4px; background:${i===currentIndex?'var(--accent)':'rgba(255,255,255,0.1)'}; border-radius:2px; transition:0.4s;`;
+        pb.appendChild(dot);
+    });
+}
+
+const starPath = document.getElementById('starPath');
+starData.forEach((data, i) => {
+    const xPos = Math.sin(i) * (window.innerWidth < 600 ? 50 : 120);
+    const node = document.createElement('div');
+    node.className = 'star-node';
+    node.style.transform = `translateX(${xPos}px)`;
+    node.onclick = () => {
+        document.getElementById('starImg').src = data.img;
+        document.getElementById('starText').innerText = data.txt;
+        document.getElementById('modalStar').style.display = 'flex';
+    };
+    starPath.appendChild(node);
+});
+
+const obs = new IntersectionObserver(ents => {
+    ents.forEach(e => { if(e.isIntersecting) e.target.classList.add('active'); });
+}, {threshold: 0.7});
+document.querySelectorAll('.star-node').forEach(n => obs.observe(n));
+
+function openPanel(tipo) {
+    const modal = document.getElementById('modalGeneric');
+    const title = document.getElementById('genericTitle');
+    const body = document.getElementById('genericBody');
+    if(tipo === 'lugares') {
+        title.innerText = "📍 Lugares que recorreremos";
+        body.innerHTML = "• Conocer Suiza.<br>• Visitar el Callejón del beso.<br>• El mar al atardecer.<br>• Ver los cerezos en Japon.";
+    } else {
+        title.innerText = "✨ Nuestras Metas";
+        body.innerHTML = "• Construir un hogar juntos.<br>• Lograr cada uno de nuestras promesas.<br>• Nunca dejar de decirnos 'Te amo'.<br>• Envejecer juntos.";
+    }
+    modal.style.display = 'flex';
+}
+
+function openLetterAuth() { closeModals(); document.getElementById('modalAuth').style.display = 'flex'; }
+function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
+
+function checkPass() {
+    if(document.getElementById('passInput').value === "12/03/2025") {
+        document.getElementById('modalAuth').style.display = 'none';
+        document.getElementById('modalLetter').style.display = 'flex';
+        typeLetter();
+    } else { alert("Fecha incorrecta"); }
+}
+
+function typeLetter() {
+    const el = document.getElementById('letterText');
+    const txt = "Eres mi universo, mi luz en la oscuridad... Samantha, gracias por elegirme todos los días. Eres lo más valioso que la vida me ha dado y no pienso darte por perdida, te entregare mi vida y mi ser dia tras dia para que jamás olvides que te amo. Ya han pasado varios meses, y desde que te conozco, el amor que siento por ti crece infinitamente a como el universo se expande en el infinito inmenso, te amo y te amaré por el resto de mi vida, eres la mujer que siempre añoré. Te amo con todo mi ser.";
+    el.innerHTML = ""; let i = 0;
+    const interval = setInterval(() => {
+        el.innerHTML += txt[i]; i++;
+        if(i >= txt.length) clearInterval(interval);
+    }, 40);
+}
+
+function openTrunk() {
+    document.getElementById('trunkIcon').innerText = "🔓";
+    document.querySelectorAll('.mini-envelope').forEach((env, i) => {
+        setTimeout(() => env.classList.add('show'), i * 150);
+    });
+}
+
+function openMiniLetter(i) {
+    const data = trunkData[i];
+    document.getElementById('starImg').src = data.img;
+    document.getElementById('starText').innerText = data.txt;
+    document.getElementById('modalStar').style.display = 'flex';
+}
+
+function toggleMusic() {
+    const m = document.getElementById('bgMusic');
+    m.paused ? m.play() : m.pause();
+}
+
+/* --- CANVAS --- */
+const canvas = document.getElementById('galaxyCanvas');
+const ctx = canvas.getContext('2d');
+let stars = []; let hearts = []; let mouse = { x: -1000, y: -1000 };
+
+window.onmousemove = (e) => {
+    mouse.x = e.clientX; mouse.y = e.clientY;
+    const s = document.createElement('div');
+    s.className = 'sparkle'; s.style.left = e.clientX+'px'; s.style.top = e.clientY+'px';
+    document.body.appendChild(s); setTimeout(() => s.remove(), 800);
+};
+
+// Soporte touch para sparkles
+window.ontouchmove = (e) => {
+    mouse.x = e.touches[0].clientX; mouse.y = e.touches[0].clientY;
+    const s = document.createElement('div');
+    s.className = 'sparkle'; s.style.left = mouse.x+'px'; s.style.top = mouse.y+'px';
+    document.body.appendChild(s); setTimeout(() => s.remove(), 800);
+};
+
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+window.onresize = resize; resize();
+
+function createStars() {
+    stars = []; hearts = [];
+    const count = window.innerWidth < 600 ? 150 : 280;
+    for(let i=0; i<count; i++) {
+        stars.push({ x: Math.random()*innerWidth, y: Math.random()*innerHeight, r: Math.random()*2.2+0.5, baseR: 0, s: Math.random()*0.12, o: Math.random(), pulse: Math.random()*0.02 });
+        stars[i].baseR = stars[i].r;
+    }
+    for(let i=0; i<12; i++) {
+        hearts.push({ x: Math.random()*innerWidth, y: Math.random()*innerHeight, size: Math.random()*7+6, opacity: Math.random(), speed: 0.003+Math.random()*0.005 });
+    }
+}
+
+function drawHeart(x, y, size, opacity) {
+    ctx.save(); ctx.beginPath(); ctx.translate(x, y);
+    ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+    ctx.moveTo(0, 0); ctx.bezierCurveTo(-size/2, -size/2, -size, size/3, 0, size);
+    ctx.bezierCurveTo(size, size/3, size/2, -size/2, 0, 0); ctx.fill(); ctx.restore();
+}
+
+function draw() {
+    ctx.fillStyle = '#020205'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    stars.forEach(s => {
+        const dx = mouse.x - s.x; const dy = mouse.y - s.y; const dist = Math.sqrt(dx*dx + dy*dy);
+        let finalOpacity = Math.abs(s.o); let finalRadius = s.baseR;
+        if (dist < 80) { finalOpacity = 1; finalRadius = s.baseR * 2.5; }
+        s.o += s.pulse; if(s.o > 1 || s.o < 0) s.pulse *= -1;
+        ctx.beginPath(); ctx.fillStyle = `rgba(255,255,255,${finalOpacity})`;
+        ctx.arc(s.x, s.y, finalRadius, 0, Math.PI*2); ctx.fill();
+        s.y -= s.s; if(s.y < 0) s.y = innerHeight;
+    });
+    hearts.forEach(h => {
+        h.opacity += h.speed; if(h.opacity > 0.8 || h.opacity < 0.1) h.speed *= -1;
+        drawHeart(h.x, h.y, h.size, Math.abs(h.opacity));
+        h.y -= 0.05; if(h.y < -20) h.y = innerHeight + 20;
+    });
+    requestAnimationFrame(draw);
+}
+
+createStars(); draw(); renderStack();
+
+setInterval(() => {
+    const start = new Date("2025-03-12T00:00:00");
+    const diff = new Date() - start;
+    const d = Math.floor(diff/864e5), h = Math.floor(diff/36e5)%24, m = Math.floor(diff/6e4)%60, s = Math.floor(diff/1e3)%60;
+    document.getElementById('clock').innerText = `${d}d ${h}h ${m}m ${s}s`;
+}, 1000);
+
+document.getElementById('inputFotos').onchange = (e) => {
+    Array.from(e.target.files).forEach(f => fotos.push(URL.createObjectURL(f)));
+    renderStack();
+};
+
+function triggerMagic() {
+    for(let i=0; i<15; i++) {
+        const h = document.createElement('div'); h.innerHTML = "🤍";
+        h.style = `position:fixed; left:${mouse.x === -1000 ? 40 : mouse.x}px; bottom:${mouse.y === -1000 ? 40 : (window.innerHeight - mouse.y)}px; font-size:20px; transition:1.2s; z-index:100;`;
+        document.body.appendChild(h);
+        setTimeout(() => {
+            h.style.transform = `translate(${(Math.random()-0.5)*400}px, -${300+Math.random()*300}px) scale(0)`;
+            h.style.opacity = "0";
+            setTimeout(() => h.remove(), 1200);
+        }, 50);
+    }
+}
+</script>
+</body>
+</html>
